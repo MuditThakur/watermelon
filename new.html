@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smooth Scroll-Controlled Video Playback</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: Arial, sans-serif;
+            overscroll-behavior: none;
+        }
+
+        .hero {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .hero-video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .spacer {
+            height: 200vh; /* Reduced scrollable space */
+            background: linear-gradient(
+                to bottom, 
+                rgba(0,0,0,0.1), 
+                rgba(0,0,0,0.3)
+            );
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .content {
+            text-align: center;
+            max-width: 600px;
+            padding: 20px;
+            background: rgba(0,0,0,0.6);
+            border-radius: 10px;
+        }
+
+        #progressBar {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            height: 10px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 5px;
+            overflow: hidden;
+            z-index: 20;
+        }
+
+        #progress {
+            width: 0;
+            height: 100%;
+            background: white;
+            transition: width 0.2s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <video id="heroVideo" class="hero-video" playsinline muted>
+            <source src="/home/mudit/Downloads/Watermelon video.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+    </div>
+
+    <div id="progressBar">
+        <div id="progress"></div>
+    </div>
+
+    <div class="spacer"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const video = document.getElementById('heroVideo');
+            const progressBar = document.getElementById('progress');
+            
+            let videoDuration = 0;
+            const fps = 30;
+            const frameTime = 1 / fps;
+            
+            // Preload video metadata
+            video.addEventListener('loadedmetadata', () => {
+                videoDuration = video.duration;
+                video.currentTime = 0;
+            });
+    
+            // Smooth video control based on scroll
+            function controlVideo() {
+                const currentScrollPosition = window.pageYOffset;
+                const documentHeight = document.documentElement.scrollHeight - window.innerHeight;
+                const scrollPercentage = currentScrollPosition / documentHeight;
+    
+                // Improved scroll-to-video mapping with exponential easing
+                const easedScrollPercentage = Math.pow(scrollPercentage, 1.5);
+                const targetTime = Math.min(videoDuration, easedScrollPercentage * videoDuration);
+    
+                // Smoother video time update
+                video.currentTime = targetTime;
+    
+                // Update progress bar with smooth transition
+                progressBar.style.width = `${scrollPercentage * 100}%`;
+            }
+    
+            // Debounce scroll events for performance
+            let scrollRAF = null;
+            window.addEventListener('scroll', () => {
+                if (scrollRAF) {
+                    cancelAnimationFrame(scrollRAF);
+                }
+                scrollRAF = requestAnimationFrame(controlVideo);
+            });
+
+            // Mousewheel acceleration for smoother scrolling
+            window.addEventListener('wheel', (e) => {
+                // Optional: Add subtle scroll acceleration
+                window.scrollBy({
+                    top: e.deltaY * 0.5,
+                    behavior: 'smooth'
+                });
+            });
+        });
+    </script>
+</body>
+</html>
